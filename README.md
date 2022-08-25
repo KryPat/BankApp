@@ -1,4 +1,7 @@
-# Bank
+#Bank 
+This application is an project created to improve my Scala knowlage
+
+# Architecture
 Bank application
 * each bank account is a persistent actor
 * all events are recorded (creation, update etc)
