@@ -1,4 +1,4 @@
-#Bank 
+# Bank 
 This application is an project created to improve my Scala knowlage
 
 # Architecture
