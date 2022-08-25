@@ -74,7 +74,7 @@ class PersistentBankAccount {
         state.copy(balance = state.balance + amount)
     }
 
-  def apply(id: String): Behavior[Command]
+  def apply(id: String): Behavior[Command] =
     EventSourcedBehavior[Command, Event, BankAccount](
       persistenceId = PersistenceId.ofUniqueId(id),
       emptyState = BankAccount(id, "", "", 0.0), //unused
