@@ -13,7 +13,7 @@ class PersistentBankAccount {
     - fault tolerance
     - auditing
    */
-  // IMPORTANT! Never use Double for money in real life application
+  // IMPORTANT! Never use Double for money in real life application!
   // commands = messages
   sealed trait Command
 
