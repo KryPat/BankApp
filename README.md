@@ -1,5 +1,5 @@
 # Bank 
-This application is an project created to improve my Scala knowlage
+This application is an project created to improve my Scala language skill and knowlage
 
 # Architecture
 Bank application
