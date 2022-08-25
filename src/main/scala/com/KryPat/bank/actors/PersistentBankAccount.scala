@@ -1,9 +1,10 @@
-package com.KryPat.actors
+package com.KryPat.bank.actors
 
-import akka.actor.typed.ActorRef
+
+import akka.actor.typed.{ActorRef, Behavior}
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior}
-import akka.remote.transport.TestTransport.Behavior
+
 
 // a single bank account
 class PersistentBankAccount {
@@ -40,17 +41,43 @@ class PersistentBankAccount {
 
   val commandHandler: (BankAccount, Command) => Effect[Event, BankAccount] = (state, command) =>
     command match {
-      case CreateBankAccount(user, currency, initialBalance, replyTo) =>
+      case CreateBankAccount(user, currency, initialBalance, bank) =>
         val id = state.id
+        /*
+          - bank creates me
+          - bank sends me CreatedBankAccount
+          - I persist BankAccountCreated
+          - I update my state
+          - reply back to bank with BankAccountCreatedResponse
+          - (the bank surfaces the response to the HTTP server)
+         */
         Effect
-          .persist(BankAccountCreated(BankAccount(id, user, currency, initialBalance)))
-          .thenReply(replyTo)(_ => BankAccountCreatedResponse(id))
+          .persist(BankAccountCreated(BankAccount(id, user, currency, initialBalance))) // persisted into Cassandra
+          .thenReply(bank)(_ => BankAccountCreatedResponse(id))
+      case UpdateBalance(_, _, amount, bank) =>
+        val newBalance = state.balance + amount
+        // check here for withdrawal
+        if (newBalance < 0) // illegal
+          Effect.reply(bank)(BankAccountBalanceUpdatedResponse(None))
+        else
+          Effect
+          .persist(BalanceUpdated(amount))
+          .thenReply(bank)(newState => BankAccountBalanceUpdatedResponse(Some(newState)))
+      case GetBankAccount(_, bank) =>
+        Effect.reply(bank)(GetBankAccountResponse(Some(state)))
     }
-  val eventHandler: (BankAccount, Event) => BankAccount = ???
+  val eventHandler: (BankAccount, Event) => BankAccount = (state, event) =>
+    event match {
+      case BankAccountCreated(bankAccount) =>
+        bankAccount
+      case BalanceUpdated(amount) =>
+        state.copy(balance = state.balance + amount)
+    }
+
   def apply(id: String): Behavior[Command]
     EventSourcedBehavior[Command, Event, BankAccount](
-      persistenceId = PersistenceId.ofUniqueId(id),
-      emptyState = BankAccount(id, "", "", 0.0), //unused
+      persistenceId = PersistenceId.ofUniqueId("id"),
+      emptyState = BankAccount("id", "", "", 0.0), //unused
       commandHandler = commandHandler,
       eventHandler = eventHandler
     )
