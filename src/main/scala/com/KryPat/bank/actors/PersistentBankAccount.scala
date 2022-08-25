@@ -76,8 +76,8 @@ class PersistentBankAccount {
 
   def apply(id: String): Behavior[Command]
     EventSourcedBehavior[Command, Event, BankAccount](
-      persistenceId = PersistenceId.ofUniqueId("id"),
-      emptyState = BankAccount("id", "", "", 0.0), //unused
+      persistenceId = PersistenceId.ofUniqueId(id),
+      emptyState = BankAccount(id, "", "", 0.0), //unused
       commandHandler = commandHandler,
       eventHandler = eventHandler
     )
